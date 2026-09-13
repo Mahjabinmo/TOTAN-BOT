@@ -7,7 +7,6 @@ const BALE_API_BASE = "https://tapi.bale.ai/bot";
 const BOT_TOKEN = process.env.BOT_TOKEN || "936952553:U5SKjMshs9aZ3lNCxZq9rHE7WGo6vqy25wU";
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || "";
 
-// حافظه موقت برای مدیریت وضعیت کاربران
 const userStates = new Map();
 const trackingData = new Map();
 
@@ -37,24 +36,18 @@ const LABELS = {
   support_desc: "شرح مشکل"
 };
 
-// مسیر تست سلامت سرویس
 app.get("/", (req, res) => {
-  res.status(200).send("Totan Bale Bot Service Active on Render");
+  res.status(200).send("Totan Bale Bot Service Active");
 });
 
-// مسیر دریافت Webhook
+// این مسیر بلافاصله پاسخ 200 میده تا بله پیام رو از صف خارج کنه
 app.post("/webhook", (req, res) => {
-  // ارسال پاسخ فوری 200 به بله جهت جلوگیری از انباشتگی پیام‌ها در صف
-  res.status(200).send("OK");
+  res.status(200).json({ ok: true });
 
-  // پردازش آسنکرون پیام
-  try {
-    const update = req.body;
-    if (update) {
-      handleUpdate(update).catch(err => console.error("Process Error:", err));
-    }
-  } catch (error) {
-    console.error("Webhook Internal Error:", error);
+  const update = req.body;
+  if (update && update.message) {
+    console.log(`Received update_id: ${update.update_id || 'N/A'} from chat: ${update.message.chat ? update.message.chat.id : 'N/A'}`);
+    handleUpdate(update).catch(err => console.error("Update Error:", err));
   }
 });
 
