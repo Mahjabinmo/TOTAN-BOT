@@ -7,7 +7,7 @@ const BALE_API_BASE = "https://tapi.bale.ai/bot";
 const BOT_TOKEN = process.env.BOT_TOKEN || "936952553:U5SKjMshs9aZ3lNCxZq9rHE7WGo6vqy25wU";
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || "";
 
-// حافظه موقت در صورت عدم استفاده از دیتابیس خارجی
+// حافظه موقت برای مدیریت وضعیت کاربران
 const userStates = new Map();
 const trackingData = new Map();
 
@@ -37,20 +37,24 @@ const LABELS = {
   support_desc: "شرح مشکل"
 };
 
-// مسیر اصلی تست
+// مسیر تست سلامت سرویس
 app.get("/", (req, res) => {
-  res.send("Totan Bale Bot Service Active on Render");
+  res.status(200).send("Totan Bale Bot Service Active on Render");
 });
 
-// مسیر دریافت Webhook از بله
-app.post("/webhook", async (req, res) => {
+// مسیر دریافت Webhook
+app.post("/webhook", (req, res) => {
+  // ارسال پاسخ فوری 200 به بله جهت جلوگیری از انباشتگی پیام‌ها در صف
+  res.status(200).send("OK");
+
+  // پردازش آسنکرون پیام
   try {
     const update = req.body;
-    await handleUpdate(update);
-    res.status(200).send("OK");
+    if (update) {
+      handleUpdate(update).catch(err => console.error("Process Error:", err));
+    }
   } catch (error) {
-    console.error("Webhook Error:", error);
-    res.status(200).send("OK");
+    console.error("Webhook Internal Error:", error);
   }
 });
 
@@ -221,7 +225,6 @@ async function processStateMachine(chatId, text, photo, location, state) {
     }
   }
 
-  // TRACKING FLOW
   if (state.data.flow === "TRACKING") {
     if (state.step === "TRACKING_INPUT") {
       const result = trackingData.get(text);
